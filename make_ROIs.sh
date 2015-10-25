@@ -1,5 +1,6 @@
 #! /bin/csh
 
+# Vamos ver se este commit funciona 
 
 set radius = 8
 
@@ -9,10 +10,10 @@ set bb = mask_group+tlrc
 
 #new_ROIS_coord.txt
 # remove previous
-rm ROI_* 
+rm ROI_*
 
 
-3dUndump -xyz -master ${bb} -orient RPI -srad ${radius} -prefix ROI_ALL.nii ROIS_coord_ALL.txt  
+3dUndump -xyz -master ${bb} -orient RPI -srad ${radius} -prefix ROI_ALL.nii ROIS_coord_ALL.txt
 gzip -v ROI_ALL.nii
 
 
@@ -53,7 +54,7 @@ rm ROI_${d}_resampled+*
 3dresample -master ${bb} \
 -rmode NN -dxyz 1.0 1.0 1.0 \
 -prefix new_ROI_${d}_resampled \
--inset new_ROI_${d}+tlrc 
+-inset new_ROI_${d}+tlrc
 
 
 
@@ -91,7 +92,7 @@ foreach indx (`count -digits 1 1 18`)
 	-a new_ROI_${d}+tlrc \
 	-expr "equals(a,${indx_right[${indx}]})" \
 	-prefix ROI.R.${names[${indx}]}.1x1x1
-	
+
 	# BOTH
 	3dcalc -fscale \
 	-overwrite \
@@ -124,7 +125,7 @@ exit
 # Here i am creating a midline cg25 seed
 
 
-3dUndump -xyz -master ${bb} -orient RPI -srad 6 -prefix MID.cg25_temp midline_cg25.txt 
+3dUndump -xyz -master ${bb} -orient RPI -srad 6 -prefix MID.cg25_temp midline_cg25.txt
 
 # Now reorient the file
 # 3drefit -orient LPI new_ROI_20100328+tlrc
@@ -133,7 +134,7 @@ exit
 3dresample -master /IMAGING_DATA/IDEAL_BRAINS/MNI152_T1_1mm_brain.nii.gz \
 -rmode NN -dxyz 1.0 1.0 1.0 \
 -prefix ROI.MID.cg25.1x1x1 \
--inset MID.cg25_temp+tlrc 
+-inset MID.cg25_temp+tlrc
 
 
 # Now get the ROIinfo for MNI space
@@ -144,23 +145,3 @@ exit
 		-master /home/cameron/IMAGING_DATA/R01/FMRI/R01501/RST/R01.501.3DTFIT_bp.resid.RST.GB6.3x3x3.MNI+tlrc'[0]' \
 		-inset ROI.MID.cg25.1x1x1+tlrc \
 		-prefix ROI.MID.cg25+tlrc \
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
