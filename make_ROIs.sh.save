@@ -1,0 +1,171 @@
+#! /bin/csh
+
+
+set radius = 8
+
+# Here i will make the ROIS from a list
+set bb = mask_group+tlrc
+
+
+#new_ROIS_coord.txt
+# remove previous
+rm ROI_ALL* 
+
+
+3dUndump -xyz -master ${bb} -orient RPI -srad ${radius} -prefix ROI_ALL.nii ROIS_coord_ALL.txt  
+gzip -v ROI_ALL.nii
+
+
+# Now get the ROIinfo for MNI space MUST FIX THIS PART!!!!
+#########3dclust -mni -1clip 0.5 5.1 100  new_ROI_${d}_resampled+tlrc > ROIloc_MNI_${d}
+
+
+# Now create separate files with names
+set names = ( lmtg1 mfg lifg_orb lsfg  pcing  ripl  rmtg  rlingual lmtg2    rifg
+
+)
+
+
+#foreach indx (`count -digits 1 1 9`)
+foreach indx (`count -digits 1 1 2`)
+
+
+	# name the ROI
+	3dcalc -fscale \
+	-overwrite \
+	-a ROI_CRK.nii.gz \
+	-expr "equals(a,${indx})" \
+	-prefix ROI_${names[${indx}]}.nii.gz
+
+end
+
+
+
+exit
+
+
+
+
+
+# Now reorient the file
+# 3drefit -orient LPI new_ROI_20100328+tlrc
+
+# adapt it to the size of the T1 file that is used in the spatial normalizing
+
+# remove previous
+rm ROI_${d}_resampled+*
+
+3dresample -master ${bb} \
+-rmode NN -dxyz 1.0 1.0 1.0 \
+-prefix new_ROI_${d}_resampled \
+-inset new_ROI_${d}+tlrc 
+
+
+
+
+
+endif
+
+
+if (1) then
+
+
+set names = (cg25 ACC24 dMF10 vMFp10 dlPF9 vlPF47 vPCC MCC24 NucAcc Amyg Hipp Thalamus aINS preMotor caudate frontal_pole dorsal10and9 putamen)
+
+#set names_left = (lcg25 lACC24 ldMF10 lvMFp10 ldlPF9 lvlPF47 lvPCC lMCC24 lNucAcc lAmyg lHipp lThalamus laINS lpreMotor lcaudate)
+#set names_right = (rcg25 rACC24 rdMF10 rvMFp10 rdlPF9 rvlPF47 rvPCC rMCC24 rNucAcc rAmyg rHipp rThalamus raINS rpreMotor rcaudate)
+
+
+set indx_left = (1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 )
+set indx_right = (2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36)
+
+
+# loop through the clusters
+foreach indx (`count -digits 1 1 18`)
+
+	# LEFT
+	3dcalc -fscale \
+	-overwrite \
+	-a new_ROI_${d}+tlrc \
+	-expr "equals(a,${indx_left[${indx}]})" \
+	-prefix ROI.L.${names[${indx}]}.1x1x1
+
+	# RIGHT
+	3dcalc -fscale \
+	-overwrite \
+	-a new_ROI_${d}+tlrc \
+	-expr "equals(a,${indx_right[${indx}]})" \
+	-prefix ROI.R.${names[${indx}]}.1x1x1
+	
+	# BOTH
+	3dcalc -fscale \
+	-overwrite \
+	-a ROI.L.${names[${indx}]}.1x1x1+tlrc \
+	-b ROI.R.${names[${indx}]}.1x1x1+tlrc \
+	-expr "step(a+b)" \
+	-prefix ROI.BOTH.${names[${indx}]}.1x1x1
+
+	# Now transform to 3x3x3 to seed the resting state
+	foreach side (L R BOTH)
+		3dresample -overwrite \
+		-master /home/cameron/IMAGING_DATA/R01/FMRI/R01501/RST/R01.501.3DTFIT_bp.resid.RST.GB6.3x3x3.MNI+tlrc'[0]' \
+		-inset ROI.${side}.${names[${indx}]}.1x1x1+tlrc \
+		-prefix ROI.${side}.${names[${indx}]}+tlrc \
+
+
+	end
+
+end
+
+
+endif
+
+
+
+
+exit
+
+
+# Here i am creating a midline cg25 seed
+
+
+3dUndump -xyz -master ${bb} -orient RPI -srad 6 -prefix MID.cg25_temp midline_cg25.txt 
+
+# Now reorient the file
+# 3drefit -orient LPI new_ROI_20100328+tlrc
+
+# adapt it to the size of the T1 file that is used in the spatial normalizing
+3dresample -master /IMAGING_DATA/IDEAL_BRAINS/MNI152_T1_1mm_brain.nii.gz \
+-rmode NN -dxyz 1.0 1.0 1.0 \
+-prefix ROI.MID.cg25.1x1x1 \
+-inset MID.cg25_temp+tlrc 
+
+
+# Now get the ROIinfo for MNI space
+3dclust -mni -1clip 0.5 1.8 100 ROI.MID.cg25.1x1x1+tlrc > ROIloc_MNI_MID.cg25
+
+# Now convert to 3x3x3
+3dresample -overwrite \
+		-master /home/cameron/IMAGING_DATA/R01/FMRI/R01501/RST/R01.501.3DTFIT_bp.resid.RST.GB6.3x3x3.MNI+tlrc'[0]' \
+		-inset ROI.MID.cg25.1x1x1+tlrc \
+		-prefix ROI.MID.cg25+tlrc \
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
